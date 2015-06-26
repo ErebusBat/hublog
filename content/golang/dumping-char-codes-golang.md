@@ -22,7 +22,7 @@ func DumpString(str string) {
 
 ### Example
 
-~~~
+~~~ bash
 $ go run main.go
 >H< 72
 >e< 101
