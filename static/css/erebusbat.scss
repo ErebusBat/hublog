@@ -13,3 +13,31 @@ thead {
     background-color: rgb(240, 240, 240);
   }
 }
+
+/*
+  Google Custom Search box
+      https://github.com/spf13/hugo/pull/775/files
+*/
+input.gsc-input,
+.gsc-input-box,
+.gsc-input-box-hover,
+.gsc-input-box-focus,
+.gsc-search-button,
+.gsc-inline-block {
+  box-sizing: content-box;
+  line-height: normal;
+}
+
+.gsc-control-cse {
+  padding: 0.1em 0 0.5em 1em !important;
+  width: 16em !important;
+  float: right;
+}
+
+input.gsc-search-button-v2 {
+  padding: 6px 12px !important;
+}
+
+.gsc-search-box-tools .gsc-search-box .gsc-input {
+  padding-right: 1px !important;
+}
