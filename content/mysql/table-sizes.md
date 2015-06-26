@@ -5,6 +5,9 @@ Tags = ["mysql"]
 Aliases = ["wiki/2014/04/15/mysql-size_calculations.html"]
 +++
 
+How to calculate table sized in MySQL
+<!--more-->
+
 ###### Links
   * [SO: how-can-you-determine-how-much-disk-space-a-particular-mysql-table-is-taking-up](http://stackoverflow.com/a/6474642/3683)
 

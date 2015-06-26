@@ -6,6 +6,9 @@ title = "AWK Field Notes"
 Aliases = ["/wiki/2014/06/19/awk.html"]
 +++
 
+Misc notes and snippets in a _Field Notes_ style
+<!--more-->
+
 #### Links
   * http://stackoverflow.com/a/6546314/3683
 

@@ -5,6 +5,9 @@ tags = ["zsh", "field-notes", "DokuWiki"]
 aliases = ["/wiki/2012/09/04/zsh.html"]
 +++
 
+Misc notes and snippets in a _Field Notes_ style
+<!--more-->
+
 
 ## Links
   * [ZSH Conditional Expressions](http://www.cs.elte.hu/zsh-manual/zsh_12.html)

@@ -9,7 +9,8 @@ While iterating file names on my OSX system I noticed that I could not do condit
 
 Turns out that OSX appends a CR (yes a carriage return) at the end of the file name.  WTF?
 
-Anyway... I ended up with this small snippet of code to dump char codes of a string to the console that has no business remaining in the original project:
+Anyway... I ended up with this small snippet of code to dump char codes of a string to the console that has no business remaining in the original project.
+<!--more-->
 
 ~~~ go
 func DumpString(str string) {

@@ -6,6 +6,9 @@ title = "MySQL Dump Field Notes"
 Aliases = ["/wiki/2014/04/15/mysql-dump.html"]
 +++
 
+Misc notes and snippets in a _Field Notes_ style
+<!--more-->
+
 #### Large Tables
   * http://stackoverflow.com/questions/5666784/how-can-i-slow-down-a-mysql-dump-as-to-not-affect-current-load-on-the-server
 

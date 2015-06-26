@@ -5,6 +5,7 @@ tags = ["sass", "haml"]
 +++
 
 Sometimes it is necessary to add CSS styling tags directly into HAML content.  I am forever forgetting the proper way to do this.
+<!--more-->
 
 ~~~ haml
 %style{type:'text/css'}

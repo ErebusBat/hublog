@@ -9,8 +9,8 @@ aliases = ["/wiki/2014/03/26/mssql.html"]
 +++
 
 Random field notes on Microsoft SQL Server
+<!--more-->
 
-------------------------------------------------------------------------
 ## Misc Snippets
 ~~~ sql
 -- Create new table from select:

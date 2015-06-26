@@ -6,6 +6,8 @@ title = "MySQL Field Notes"
 Aliases = ["/wiki/2012/09/13/mysql.html"]
 +++
 
+Misc notes and snippets in a _Field Notes_ style
+<!--more-->
 
 ## Create DB / User
 Make sure the DB exists with a ''mysqladmin create jira'' first
