@@ -21,6 +21,9 @@ clean:
 buildit:
 	hugo
 
-deploy: build
+pushgh:
+	git push $(REMOTE) $(BRANCH)
+	
+deploy: build pushgh
 	cd public; \
 		make deploy
