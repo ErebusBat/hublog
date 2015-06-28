@@ -4,6 +4,7 @@
 REMOTE = origin
 BRANCH = master
 SITE_URL=http://www.ErebusBat.com
+LOCAL_URL=http://127.0.0.1:1313/
 
 ################################################################################
 ## Targets
@@ -30,4 +31,7 @@ deploy: build pushgh
 		make deploy
 
 open:
-		open $(SITE_URL)
+	open $(SITE_URL)
+
+preview:
+	open $(LOCAL_URL)
