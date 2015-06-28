@@ -3,6 +3,7 @@
 ####################################################################
 REMOTE = origin
 BRANCH = master
+SITE_URL=http://www.ErebusBat.com
 
 ################################################################################
 ## Targets
@@ -23,7 +24,10 @@ buildit:
 
 pushgh:
 	git push $(REMOTE) $(BRANCH)
-	
+
 deploy: build pushgh
 	cd public; \
 		make deploy
+
+open:
+		open $(SITE_URL)
