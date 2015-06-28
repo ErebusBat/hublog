@@ -2,3 +2,5 @@ baseurl = "http://www.erebusbat.com"
 languageCode = "en-us"
 title = "ErebusBat"
 theme = "liquorice"
+[permalinks]
+  post = "/:year/:month/:title/"
