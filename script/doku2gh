@@ -54,6 +54,10 @@ class CliApp < Thor
     desc: "Outputs to STDOUT (non destructive, does not honor --whatif)",
     type: :boolean,
     default: false
+  method_option :notes,
+    desc: "Indicates the page is a field-notes",
+    type: :boolean,
+    default: false
   method_option :out,
     desc: "Output file / path",
     type: :string,
@@ -106,6 +110,7 @@ class CliApp < Thor
       if opts.meta
         whatif("Attempting to extract metadata for #{src_file}")
         metadata = extact_meta(src_file)
+        metadata[:tags] = tag_cleanup(metadata[:tags], opts)
         if metadata
           # new_file = get_jekyll_front_matter(metadata) + new_file
           new_file = get_hugo_front_matter(metadata) + new_file
@@ -145,6 +150,18 @@ class CliApp < Thor
 
 
   private
+    def tag_cleanup(tags, opts)
+      tags = [] if tags.nil?
+      if tags.delete("ror")
+        tags << "rails"
+      end
+
+      if opts.notes
+        tags << 'field-notes'
+      end
+
+      tags.sort!
+    end
     def extact_meta(src_file)
       return false unless src_file.to_s =~ %r{/data/pages/}
       meta_dir = Pathname.new(src_file.parent.to_s.gsub(%r{/data/pages/}, '/data/meta/'))
