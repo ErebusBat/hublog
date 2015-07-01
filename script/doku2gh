@@ -402,7 +402,7 @@ class CliApp < Thor
       new_line = line
 
       # DokuWiki links
-      new_line = new_line.gsub(/\[\[([^|]+)\|([^|]+)\]\]/i) do |m|
+      new_line = new_line.gsub(/\[\[([^|]+)\|([^|]+?)\]\]/i) do |m|
         %Q|[#{$2}](#{$1})|
       end
 
