@@ -257,6 +257,7 @@ class CliApp < Thor
       line = parse_remove_line(line)
       line = parse_sanitize(line)
       line = parse_headers(line)
+      line = parse_italics(line)
       line = parse_code(line)
       line = parse_code_end(line)
       line = parse_code_inline(line)
@@ -391,6 +392,10 @@ class CliApp < Thor
       end
 
       line
+    end
+
+    def self.parse_italics line
+      return line.gsub(%r{//(\w+)//}, '_\1_')
     end
 
     def self.parse_links line
