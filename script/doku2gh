@@ -1,0 +1,420 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+require "ap"
+require "colorize"
+require "date"
+require "json"
+require "ostruct"
+require "pathname"
+require "psych"
+require "thor"
+
+################################################################################
+# USAGE
+#
+# Support three modes:
+#   1. STDIN/STDOUT (0 arguments):
+#      $ cat /some/file | script/doku2gh > outfile.md
+#
+#   2. file/STDOUT (1 arguments):
+#      $ script/doku2gh /some/file > outfile.md
+#
+#   3. action/file (2+ arguments):
+#      $ script/doku2gh convert /some/file > outfile.md
+#      $ script/doku2gh convert --inplace /some/file                   # Same as convert
+#                                                          # but will overwrite
+#                                                          # source file.
+#      $ script/doku2gh convert /some/file outfile.md
+#
+#      # Read doku-wiki page and extract metadata, write output to _pages/
+#      $ script/doku2gh convert --meta /data/opt/wiki/data/pages/page.txt
+################################################################################
+
+RM_TAGS = %w(
+  apps
+  linux
+)
+
+class CliApp < Thor
+  class_option :whatif,
+    desc: "Dry Run... Displays a What If",
+    type: :boolean,
+    default: false
+
+  desc "convert FILES", "Converts Files"
+  method_option :inplace,
+    desc: "Overwrites source files (used to convert/update _posts files)",
+    type: :boolean,
+    default: false
+  method_option :meta,
+    desc: "Attempts to extract meta data from Doku structure / history",
+    type: :boolean,
+    default: true
+  method_option :stdout,
+    desc: "Outputs to STDOUT (non destructive, does not honor --whatif)",
+    type: :boolean,
+    default: false
+  method_option :out,
+    desc: "Output file / path",
+    type: :string,
+    default: "content/post"
+  def convert(*files)
+    opts = OpenStruct.new(options)
+    # require 'json'
+    # puts "Args:\n#{JSON.pretty_generate(options)}\n"
+    # fatal "test"
+
+    # Cleanup args
+    files = [files] unless files.is_a?(Array)
+    # opts.stdout = true if opts.out.nil?
+    # opts.out = nil if !opts.stdout
+
+    if opts.out.to_s == "" && !opts.stdout
+      fatal("--no-out AND --no-stdout were both specified.  What do you want me to do?")
+    end
+
+    # Sanity Check
+    if files.length > 1 && opts.out.nil?
+      fatal("No --out path specificed!")
+    end
+    opts.out = Pathname.new(opts.out) if opts.out.is_a?(String)
+
+    # Process each file
+    files.each do |src_file|
+      src_file = Pathname.new(src_file)
+      # try and auto devine doku path
+      if !src_file.file?
+        dokupath = Pathname.new("/data/opt/wiki/data/pages/#{src_file}.txt")
+        if dokupath.file?
+          puts "Found #{src_file} in DokuWiki: #{dokupath}"
+          src_file = dokupath
+        end
+      end
+      if !src_file.file?
+        error "Could not find source file: #{src_file}"
+        next
+      end
+
+      new_file = CliApp.proc_file(src_file.to_s)
+      metadata = nil
+
+      if new_file.size == 0
+        error "Zero byte file (after processing): #{src_file} "
+        next
+      end
+
+      if opts.meta
+        whatif("Attempting to extract metadata for #{src_file}")
+        metadata = extact_meta(src_file)
+        if metadata
+          # new_file = get_jekyll_front_matter(metadata) + new_file
+          new_file = get_hugo_front_matter(metadata) + new_file
+          whatif("METADATA:\n" + JSON.pretty_generate(metadata.marshal_dump))
+        end
+      end
+
+      # Find out what the hell to do with it
+      if opts.stdout
+        puts new_file
+      else
+        dst_file = src_file
+
+        if opts.inplace
+          dst_file = src_file
+        elsif opts.out.directory?
+          if metadata && metadata.file
+            whatif("Metadata filename: #{metadata.file}")
+            dst_file = opts.out.join(metadata.file)
+          else
+            dst_file = opts.out.join(src_file.basename)
+          end
+        else
+          dst_file = opts.out
+        end
+        if !opts.inplace && dst_file == src_file
+          die("***ERROR: --inplace=false and dst_file==#{dst_file}")
+        end
+        if opts.whatif
+          whatif("Would have converted:\n#{src_file}\n#{dst_file}\n\n")
+        else
+          CliApp.write_file(dst_file, new_file)
+        end
+      end
+    end
+  end
+
+
+  private
+    def extact_meta(src_file)
+      return false unless src_file.to_s =~ %r{/data/pages/}
+      meta_dir = Pathname.new(src_file.parent.to_s.gsub(%r{/data/pages/}, '/data/meta/'))
+      changes_file = meta_dir.join(src_file.basename(src_file.extname).to_s + '.changes')
+      if !changes_file.file?
+        warn("Could not locate #{changes_file}")
+        return false
+      end
+
+      # I am sure there is a better way, but for what we are doing this is ok
+      first_line = File.read(changes_file.to_s).lines.first
+      parts = first_line.split("\t")
+      metadata = OpenStruct.new({
+         src_file: src_file,
+        #  category: 'wiki',
+        timestamp: DateTime.strptime(parts[0],'%s'),
+             tags: parts[3].split(":"),
+      })
+      metadata[:tags] = metadata[:tags] - RM_TAGS
+
+      # See if we have a sub area
+      sub_folder = ''
+      if src_file.parent.parent.basename.to_s == "linux"
+        metadata[:tags].delete('linux')
+        sub_folder = src_file.parent.basename
+        sub_folder = "#{sub_folder}/"
+      elsif metadata[:tags].count == 1
+        if Pathname.new("_posts").join(metadata[:tags].first).directory?
+          # If we only have one tag and it is a subfolder of posts, then
+          # stick that post there
+          sub_folder = "#{metadata[:tags].first}/"
+        end
+      end
+      metadata[:datestring] = metadata.timestamp.strftime('%Y-%m-%d')
+      metadata[:timestring] = metadata.timestamp.strftime('%H:%M:%S')
+      metadata[:file] = sub_folder + metadata.datestring + '-'+ metadata.tags.join('-') + '.md'
+      metadata[:title] = src_file.basename.to_s + ' ' + metadata.tags.join(' ')
+      metadata[:tags] << 'DokuWiki'
+
+      metadata
+    end
+    def get_hugo_front_matter(metadata)
+      fm = []
+      fm << %Q{+++}
+      fm << %Q{# Original file converted from DokuWiki on #{DateTime.now}:}
+      fm << %Q{#    #{metadata.src_file}}
+      fm << %Q{title = "#{metadata.title}"}
+      fm << %Q{date  = "#{metadata.datestring}T#{metadata.timestring}-06:00"}
+      # fm << %Q{category: "#{metadata.category}"}
+      if metadata.tags
+        fm << %Q{tags  = ["#{metadata.tags.join('","')}"]}
+      end
+      fm << %Q{+++}
+      return fm.join("\n") + "\n"*2
+    end
+    def get_jekyll_front_matter(metadata)
+      fm = []
+      fm << %Q{---}
+      fm << %Q{# Original file converted from DokuWiki on #{DateTime.now}:}
+      fm << %Q{#    #{metadata.src_file}}
+      fm << %Q{title:  "#{metadata.title}"}
+      fm << %Q{date:   #{metadata.datestring} #{metadata.timestring}}
+      fm << %Q{category: "#{metadata.category}"}
+      if metadata.tags
+        fm << %Q{tags: [#{metadata.tags.join(", ")}]}
+      end
+      fm << %Q{---}
+      return fm.join("\n") + "\n"*2
+    end
+    def die(msg, ec=1)
+      $stderr.puts msg
+      Kernel.exit(ec)
+    end
+    def fatal(msg, ec=1)
+      die("***   ERROR: #{msg}".red, ec)
+    end
+    def error(msg)
+      print '***   ERROR: '.red
+      puts msg
+    end
+    def warn(msg)
+      print '*** WARNING: '.yellow
+      puts msg
+    end
+    def whatif(msg)
+      return unless options[:whatif]
+      print '***  WHATIF: '.cyan
+      puts msg
+    end
+    def self.parse_line line
+      return line if line.empty?
+
+      line = parse_remove_line(line)
+      line = parse_sanitize(line)
+      line = parse_headers(line)
+      line = parse_code(line)
+      line = parse_code_end(line)
+      line = parse_code_inline(line)
+      line = parse_links(line)
+
+      return line
+    end
+
+    def self.parse_code_inline line
+      new_line = line
+
+      # DokuWiki inline
+      new_line = new_line.gsub(/''([^']+)''/i) do |m|
+        %Q|`#{$1}`|
+      end
+
+      new_line
+    end
+
+    def self.parse_code line
+      lang = nil
+
+      if lang.nil?
+        m = /^~~~ (\w+)$/.match(line)
+        lang = m[1] if m
+      end
+
+      if lang.nil?
+        m = /^<code (\w+)\s*>$/.match(line)
+        lang = m[1] if m
+
+      end
+
+      if lang.nil?
+        m = /^<code\s*>$/.match(line)
+        lang = "" if m
+      end
+
+      if lang.nil?
+        return line
+      else
+        # Pygments does not support 'vb' so use vbnet instead
+        lang = "vbnet" if lang =~ /^vb$/i
+
+        # return "{% highlight #{$1} %}"
+        return "\n~~~ #{lang}"
+      end
+    end
+
+    def self.parse_code_end line
+      matched = false
+
+      if !matched
+        if line =~ /^~~~$/
+          matched = true
+        end
+      end
+
+      if !matched
+        if line =~ /^<\/code\s*>$/
+          matched = true
+        end
+      end
+
+      if matched
+        # return "{% endhighlight %}"
+        return "~~~"
+      else
+        return line
+      end
+    end
+
+    def self.parse_headers line
+      m = /^(={1,6}) ([-a-z0-9 \/\/]+) =+$/i.match(line)
+      # m = /^(={1,6}) ([. ]+) =+$/i.match(line)
+      if m
+        new_line = "#" * m[1].length
+        new_line.gsub!(/######/, '##')
+        new_line += " #{m[2]}"
+        return new_line
+      end
+
+      line
+    end
+
+    def self.parse_links line
+      new_line = line
+
+      # DokuWiki links
+      new_line = new_line.gsub(/\[\[([^|]+)\|([^|]+)\]\]/i) do |m|
+        %Q|[#{$2}](#{$1})|
+      end
+
+      new_line
+    end
+
+    @sanitize_terms = nil
+    def self.parse_sanitize line
+      if @sanitize_terms.nil?
+        file = Pathname.new(__FILE__).parent.join("sanitize.yml")
+        if file.exist?
+          @sanitize_terms = Psych.load_file(file.to_s)
+        else
+          @sanitize_terms = {
+            :change_this_long_and_example_key     => "to this",
+            /change_this_long_and_example_regex/i => "to this",
+            /\d{3}-\d{2}-\d{4}/i                  => "123-45-6789",
+          }
+          puts "***"
+          puts "*** INFO: Created example sanitization file: #{file}"
+          puts "***       this has example terms in it, so don't ignore it"
+          puts "***"
+          File.open(file.to_s, 'w') do |file|
+            file.print(@sanitize_terms.to_yaml)
+          end
+        end
+      end
+      new_line = line
+
+      #### Changes
+      @sanitize_terms.each_pair do |old, new|
+        old = /#{old}/i unless old.is_a?(Regexp)
+
+        new_line.gsub!(old, new)
+      end
+
+      new_line
+    end
+
+    def self.parse_remove_line line
+      return "" if line =~ /^====== Subpages ======$/i
+      return "" if line.start_with?('{{indexmenu')
+
+      line
+    end
+
+
+    def self.proc_stdin
+      input = $stdin.read
+      input.lines.each do |line|
+        # puts line.rstrip
+        new_line = parse_line(line.rstrip)
+        puts new_line
+      end
+    end
+
+    def self.proc_file file
+      new_file = []
+      File.open(file, 'r') do |file|
+        file.each_line.each do |line|
+          new_line = parse_line(line.rstrip)
+          new_file << new_line
+        end
+      end
+      new_file.join("\n")
+    end
+
+    def self.write_file file_path, contents
+      puts("Writing: #{contents.length} bytes to #{file_path}")
+      File.open(file_path, 'w') do |file|
+        file.write(contents)
+      end
+    end
+end
+
+
+################################################################################
+# Entry Point
+################################################################################
+
+### Main
+if $0 == __FILE__
+  if ARGV.length == 0
+    CliApp.proc_stdin
+  else
+    CliApp.start
+  end
+end
