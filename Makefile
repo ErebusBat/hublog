@@ -5,6 +5,7 @@ REMOTE = origin
 BRANCH = master
 SITE_URL=http://www.ErebusBat.com
 LOCAL_URL=http://127.0.0.1:1313/
+DWROOT=/data/opt/wiki/data/pages
 
 ################################################################################
 ## Targets
@@ -35,3 +36,13 @@ open:
 
 preview:
 	open $(LOCAL_URL)
+
+dokutree:
+	tree $(DWROOT)
+
+convert:
+	# CONVERT HINT
+	#######################################################
+	# make dokutree
+	# export DWROOT=$(DWROOT)
+	# script/doku2gh convert --meta $$DWROOT/pgsql/start.txt
