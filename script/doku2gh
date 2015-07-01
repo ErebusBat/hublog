@@ -99,7 +99,7 @@ class CliApp < Thor
         next
       end
 
-      new_file = CliApp.proc_file(src_file.to_s)
+      new_file, first_header = CliApp.proc_file(src_file.to_s)
       metadata = nil
 
       if new_file.size == 0
@@ -110,6 +110,8 @@ class CliApp < Thor
       if opts.meta
         whatif("Attempting to extract metadata for #{src_file}")
         metadata = extact_meta(src_file)
+        metadata[:title] = first_header
+        metadata[:title] = metadata[:default_title] if metadata[:title].nil?
         metadata[:tags] = tag_cleanup(metadata[:tags], opts)
         if metadata
           # new_file = get_jekyll_front_matter(metadata) + new_file
@@ -198,7 +200,7 @@ class CliApp < Thor
       metadata[:datestring] = metadata.timestamp.strftime('%Y-%m-%d')
       metadata[:timestring] = metadata.timestamp.strftime('%H:%M:%S')
       metadata[:file] = sub_folder + metadata.datestring + '-'+ metadata.tags.join('-') + '.md'
-      metadata[:title] = src_file.basename.to_s + ' ' + metadata.tags.join(' ')
+      metadata[:default_title] = src_file.basename.to_s + ' ' + metadata.tags.join(' ')
       metadata[:tags] << 'DokuWiki'
 
       metadata
@@ -383,11 +385,14 @@ class CliApp < Thor
 
     def self.parse_headers line
       m = /^(={1,6}) ([-a-z0-9 \/\/]+) =+$/i.match(line)
-      # m = /^(={1,6}) ([. ]+) =+$/i.match(line)
+
       if m
         new_line = "#" * m[1].length
         new_line.gsub!(/######/, '##')
         new_line += " #{m[2]}"
+        if @first_header.nil?
+          @first_header = m[2]
+        end
         return new_line
       end
 
@@ -467,7 +472,7 @@ class CliApp < Thor
           new_file << new_line
         end
       end
-      new_file.join("\n")
+      [new_file.join("\n"), @first_header]
     end
 
     def self.write_file file_path, contents
