@@ -260,6 +260,8 @@ class CliApp < Thor
       line = parse_code(line)
       line = parse_code_end(line)
       line = parse_code_inline(line)
+      line = parse_file(line)
+      line = parse_file_end(line)
       line = parse_links(line)
 
       return line
@@ -274,6 +276,55 @@ class CliApp < Thor
       end
 
       new_line
+    end
+
+    def self.parse_file line
+      lang = nil
+      fname = nil
+
+      if lang.nil?
+        m = /^<file (\w+)\s*(.+)\s*>$/.match(line)
+        if m
+          lang = m[1]
+          fname = m[2]
+        end
+      end
+
+      if lang.nil?
+        m = /^<file (\w+)\s*>$/.match(line)
+        if m
+          lang = m[1]
+        end
+      end
+
+      if lang.nil?
+        return line
+      else
+        # Pygments does not support 'vb' so use vbnet instead
+        lang = "vbnet" if lang =~ /^vb$/i
+
+        if fname.nil?
+          return "\n~~~ #{lang}"
+        else
+          return "\n### #{fname}\n~~~ #{lang}"
+        end
+      end
+    end
+
+    def self.parse_file_end line
+      matched = false
+
+      if !matched
+        if line =~ /^<\/file\s*>$/
+          matched = true
+        end
+      end
+
+      if matched
+        return "~~~"
+      else
+        return line
+      end
     end
 
     def self.parse_code line
