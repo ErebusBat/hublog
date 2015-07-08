@@ -36,3 +36,31 @@ $ go run main.go
 >l< 108
 >d< 100
 ~~~
+
+
+### Full Script
+A full script / application example (copy paste ready).  
+Assumes the file is named `dump_char_codes.go`, update static string in `log.Fatalf` call for clarity if needed.
+
+~~~ go
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+)
+
+func dumpString(str string) {
+	for _, c := range str {
+		fmt.Printf(">%s< %d\n", string(c), c)
+	}
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		log.Fatalf("USAGE: dump_char_codes [string]")
+	}
+	dumpString(os.Args[1])
+}
+~~~
