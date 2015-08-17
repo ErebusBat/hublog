@@ -40,6 +40,9 @@ preview:
 dokutree:
 	tree $(DWROOT)
 
+new:
+	ASK=1 script/newpost.zsh
+
 convert:
 	# CONVERT HINT
 	#######################################################
