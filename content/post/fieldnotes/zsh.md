@@ -12,7 +12,8 @@ Misc notes and snippets in a _Field Notes_ style
 ## Links
   * [ZSH Conditional Expressions](http://www.cs.elte.hu/zsh-manual/zsh_12.html)
   * http://zanshin.net/2013/09/03/how-to-use-homebrew-zsh-instead-of-max-os-x-default/
-  * [ Some basic but good generic linux docs](http://linux-training.be/files/books/html/fun/index.html )
+  * [Some basic but good generic linux docs](http://linux-training.be/files/books/html/fun/index.html)
+  * [Parameter Expansion](http://zsh.sourceforge.net/Doc/Release/Expansion.html#Parameter-Expansion)
 
 ------------------------------------------------------------------------
 ### Path Expansion
@@ -36,6 +37,25 @@ echo ${theVar:t:r}  # file
 | e    | Remove all but the extension.                                                          |
 | t    | Remove all leading pathname components, leaving the tail.  This works like `basename'. |
 
+
+------------------------------------------------------------------------
+### Substitution
+
+~~~ bash
+theVar="path/to/a/file.txt"
+PTITLE="Hello World"
+
+# Remove leading `path/to/` prefix, if it exists
+echo ${theVar#post/}  # a/file.txt
+
+# Replace all occurrences of match (space) with given (underscore)
+echo ${PTITLE// /_}   # HELLO_WORLD
+
+# Lowercase/Upercase $PTITLE variable
+echo ${(L)PTITLE}     # hello world
+echo ${(U)PTITLE}     # HELLO WORLD
+
+~~~
 
 ------------------------------------------------------------------------
 ### Loops
