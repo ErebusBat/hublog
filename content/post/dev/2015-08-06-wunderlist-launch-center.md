@@ -2,7 +2,6 @@
 title = "Get Wunderlist List IDs for Launch Center Pro"
 date = "2015-08-06T13:02:09-06:00"
 tags = ["wunderlist", "js", "launchcenterpro"]
-draft = true
 +++
 
 
