@@ -27,6 +27,8 @@ buildit:
 pushgh:
 	git push $(REMOTE) $(BRANCH)
 
+pub: deploy
+publish: deploy
 deploy: build pushgh
 	cd public; \
 		make deploy
