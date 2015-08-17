@@ -4,3 +4,6 @@ title = "ErebusBat"
 theme = "liquorice"
 [permalinks]
   post = "/:year/:month/:title/"
+
+[params]
+  gaCode = "UA-66324155-1"
