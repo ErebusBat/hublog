@@ -22,7 +22,7 @@ clean:
 		make clean
 
 buildit:
-	hugo
+	hugo --buildDrafts=false --buildFuture=false
 
 pushgh:
 	git push $(REMOTE) $(BRANCH)
