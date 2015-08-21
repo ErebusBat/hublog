@@ -39,6 +39,9 @@ open:
 preview:
 	open $(LOCAL_URL)
 
+edit:
+	vim $$(git status -s | grep content/ | cut -c4-9999)
+
 dokutree:
 	tree $(DWROOT)
 
