@@ -40,6 +40,8 @@ preview:
 	open $(LOCAL_URL)
 
 edit:
+	@fname=$$(git status -s | grep content/ | cut -c4-9999)
+	@echo "Editing file $(fname)"
 	vim $$(git status -s | grep content/ | cut -c4-9999)
 
 dokutree:
