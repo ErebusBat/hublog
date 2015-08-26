@@ -1,6 +1,6 @@
 +++
 Draft = true
-Tags = ["vim","fieldnotes"]
+Tags = ["vim","field-notes"]
 date = "2015-08-21T09:51:10-06:00"
 title = "Vim Fieldnotes"
 
